@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { caseWinner, courtRecord, crowns, dayKey, duelResults, goalProgress, greetingStreak, isQuiet, recentHere, together, upcoming } from "./logic";
+import { keysTurned, letterReady, caseWinner, courtRecord, crowns, dayKey, duelResults, goalProgress, greetingStreak, isQuiet, recentHere, together, upcoming } from "./logic";
 import { countSolutions, puzzleFor } from "./sudoku";
 import { emptyTables, type Case, type Checkin, type Duel, type Goal, type Greeting, type KeyDate, type Member } from "./types";
 
@@ -114,5 +114,24 @@ describe("daily sudoku", () => {
     expect(countSolutions(a.puzzle)).toBe(1);
     expect(a.puzzle.filter(Boolean).length).toBeLessThanOrEqual(34);
     a.puzzle.forEach((v, i) => v && expect(v).toBe(a.solution[i]));
+  });
+});
+
+describe("vault", () => {
+  it("knows when a letter's moment has come", () => {
+    expect(letterReady({ seal: "date", open_on: "2026-12-20" }, [], now)).toBe(false);
+    expect(letterReady({ seal: "date", open_on: "2026-12-20" }, [], new Date("2026-12-20T00:30:00Z"))).toBe(true);
+    expect(letterReady({ seal: "when", open_on: null }, [], now)).toBe(true);
+    expect(letterReady({ seal: "wedding", open_on: null }, [], now)).toBe(false);
+    expect(letterReady({ seal: "wedding", open_on: null }, [{ occasion: "wedding", unlocked_at: "x" }], now)).toBe(true);
+    expect(letterReady({ seal: "meeting", open_on: null }, [{ occasion: "wedding", unlocked_at: "x" }], now)).toBe(false);
+  });
+  it("only counts keys turned in the last day", () => {
+    const keys = [
+      { user_id: HIM, occasion: "wedding" as const, turned_at: "2026-12-10T10:00:00Z" },
+      { user_id: HER, occasion: "wedding" as const, turned_at: "2026-12-08T10:00:00Z" },
+    ];
+    expect(keysTurned(keys, "wedding", now)).toEqual([HIM]);
+    expect(keysTurned(keys, "meeting", now)).toEqual([]);
   });
 });

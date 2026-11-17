@@ -2,7 +2,8 @@
 // browser where you can switch between being him and her, to try both sides.
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { emptyTables, TABLES, type Member, type TableName, type Tables } from "./types";
+import { letterReady } from "./logic";
+import { emptyTables, TABLES, type Envelope, type Letter, type LetterContent, type Member, type Occasion, type TableName, type Tables } from "./types";
 
 export interface Store {
   demo: boolean;
@@ -23,9 +24,19 @@ export interface Store {
   /** Calls back when anything changes on the other phone */
   onChange(cb: () => void): () => void;
   /** A notification on the other one's phone */
-  notify(title: string, body: string): Promise<void>;
+  notify(title: string, body: string, open?: "vault"): Promise<void>;
   enablePush(): Promise<"on" | "unsupported" | "denied" | "not-configured">;
+  /* The Vault */
+  writeLetter(l: Letter): Promise<Envelope>;
+  editLetter(id: string, l: Partial<Letter>): Promise<void>;
+  /** The words, photo and voice note: only once its moment has come (or if you wrote it) */
+  openLetter(id: string): Promise<LetterContent>;
+  /** Returns true once you've both turned your keys */
+  turnKey(o: Occasion): Promise<boolean>;
 }
+
+const ENVELOPE = "id,created_at,by,title,seal,open_on,opened_at";
+const NO_DATES: TableName[] = ["settings", "vault_keys", "vault_unlocks"];
 
 export class ChezError extends Error {}
 
@@ -36,6 +47,7 @@ export function friendly(e: unknown) {
   const m = (e as Error)?.message ?? String(e);
   if (/NOT_YOURS/.test(m)) return "That's for the other one to do.";
   if (/ALREADY_RULED/.test(m)) return "The court has already ruled on this case.";
+  if (/STILL_SEALED/.test(m)) return "Not yet. This one is still sealed.";
   if (/duplicate key.*duels|duels_day_by/.test(m)) return "You've already played today's puzzle.";
   if (/Invalid login|invalid_credentials/i.test(m)) return "That key doesn't fit this door.";
   if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return "No connection. Try again in a moment.";
@@ -86,8 +98,9 @@ function supabaseStore(url: string, key: string): Store {
       const t = emptyTables();
       await Promise.all(
         TABLES.map(async (name) => {
-          const q = sb.from(name).select("*");
-          const r = name === "settings" ? await q : await q.order("created_at", { ascending: true });
+          // Only ever the envelopes from the Vault, never the letters
+          const q = sb.from(name).select(name === "vault_letters" ? ENVELOPE : "*");
+          const r = NO_DATES.includes(name) ? await q : await q.order("created_at", { ascending: true });
           (t as Record<string, unknown>)[name] = check(r) ?? [];
         }),
       );
@@ -134,9 +147,9 @@ function supabaseStore(url: string, key: string): Store {
         void sb.removeChannel(ch);
       };
     },
-    async notify(title, body) {
+    async notify(title, body, open) {
       try {
-        await sb.functions.invoke("notify", { body: { title, body } });
+        await sb.functions.invoke("notify", { body: { title, body, url: open === "vault" ? "vault.html" : "./" } });
       } catch {
         // notifications are a bonus; the app still updates live
       }
@@ -152,6 +165,18 @@ function supabaseStore(url: string, key: string): Store {
       const json = sub.toJSON();
       check(await sb.from("push_subs").upsert({ endpoint: json.endpoint, keys: json.keys }));
       return "on";
+    },
+    async writeLetter(l) {
+      return check(await sb.from("vault_letters").insert(l).select(ENVELOPE).single()) as unknown as Envelope;
+    },
+    async editLetter(id, l) {
+      check(await sb.from("vault_letters").update(l).eq("id", id));
+    },
+    async openLetter(id) {
+      return check(await sb.rpc("open_letter", { p_id: id })) as LetterContent;
+    },
+    async turnKey(o) {
+      return check(await sb.rpc("turn_key", { p_occasion: o })) as boolean;
     },
   };
 }
@@ -219,6 +244,11 @@ function demoSeed(): Tables {
   ];
   t.greetings = [1, 2, 3].map((d) => ({ ...base(DEMO_HIM, at(d, 8)), text: "Good morning to Her Imperial Majesty.", reply: "Acknowledged.", replied_at: at(d, 9) }));
   t.saved_notes = [{ ...base(DEMO_HIM, at(5)), text: "I love you so much. My day isn't the best, but I hope yours is going better. How's it going?" }];
+  t.vault_letters = [
+    { ...base(DEMO_HIM, at(2)), title: "For your birthday", seal: "date", open_on: "2026-12-20", opened_at: null },
+    { ...base(DEMO_HIM, at(2)), title: "Open when you miss me", seal: "when", open_on: null, opened_at: null },
+    { ...base(DEMO_HIM, at(1)), title: "For our wedding day", seal: "wedding", open_on: null, opened_at: null },
+  ];
   t.cases = [
     {
       ...base(DEMO_HER, at(1, 20)),
@@ -243,6 +273,7 @@ function demoStore(): Store {
       // start fresh
     }
     const seed = demoSeed();
+    saveWords(Object.fromEntries(seed.vault_letters.map((e) => [e.id, { id: e.id, body: `(Demo) ${e.title}. This is where the letter goes.`, image: null, audio: null, peaks: null, opened_at: null }])));
     save(seed);
     return seed;
   };
@@ -328,8 +359,67 @@ function demoStore(): Store {
     async enablePush() {
       return "not-configured";
     },
+    async writeLetter(l) {
+      const t = load();
+      const { body, image, audio, peaks, ...env } = l;
+      const e: Envelope = { id: crypto.randomUUID(), created_at: new Date().toISOString(), by: as(), opened_at: null, ...env };
+      t.vault_letters.push(e);
+      const words = vaultWords();
+      words[e.id] = { id: e.id, body, image, audio, peaks, opened_at: null };
+      saveWords(words);
+      save(t);
+      return e;
+    },
+    async editLetter(id, l) {
+      const t = load();
+      const { body, image, audio, peaks, ...env } = l;
+      t.vault_letters = t.vault_letters.map((e) => (e.id === id ? { ...e, ...env } : e));
+      const words = vaultWords();
+      words[id] = { ...words[id], ...Object.fromEntries(Object.entries({ body, image, audio, peaks }).filter(([, v]) => v !== undefined)) };
+      saveWords(words);
+      save(t);
+    },
+    async openLetter(id) {
+      const t = load();
+      const e = t.vault_letters.find((x) => x.id === id);
+      if (!e) throw new ChezError("That letter isn't here any more.");
+      if (e.by !== as()) {
+        if (!letterReady(e, t.vault_unlocks)) throw new ChezError(friendly("STILL_SEALED"));
+        if (!e.opened_at) {
+          e.opened_at = new Date().toISOString();
+          save(t);
+        }
+      }
+      return { ...(vaultWords()[id] ?? { id, body: null, image: null, audio: null, peaks: null }), opened_at: e.opened_at };
+    },
+    async turnKey(o) {
+      const t = load();
+      const now = new Date().toISOString();
+      t.vault_keys = [...t.vault_keys.filter((k) => !(k.user_id === as() && k.occasion === o)), { user_id: as(), occasion: o, turned_at: now }];
+      const turned = t.vault_keys.filter((k) => k.occasion === o && Date.now() - Date.parse(k.turned_at) < 24 * 3600_000);
+      if (turned.length >= 2 && !t.vault_unlocks.some((u) => u.occasion === o)) t.vault_unlocks.push({ occasion: o, unlocked_at: now });
+      save(t);
+      return t.vault_unlocks.some((u) => u.occasion === o);
+    },
   };
 }
+
+// Demo letters' words are kept apart from the envelopes, like the real thing
+const WORDS_KEY = "chez:demo-vault";
+const vaultWords = (): Record<string, LetterContent> => {
+  try {
+    return JSON.parse(localStorage.getItem(WORDS_KEY) ?? "{}") as Record<string, LetterContent>;
+  } catch {
+    return {};
+  }
+};
+const saveWords = (w: Record<string, LetterContent>) => {
+  try {
+    localStorage.setItem(WORDS_KEY, JSON.stringify(w));
+  } catch {
+    // fine
+  }
+};
 
 /** Demo only: switch between his side and hers. */
 export function demoSwitch() {
@@ -343,6 +433,7 @@ export function demoSwitch() {
 export function demoReset() {
   try {
     localStorage.removeItem(DEMO_KEY);
+    localStorage.removeItem(WORDS_KEY);
   } catch {
     // fine
   }

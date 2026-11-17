@@ -15,6 +15,8 @@ Use a **new** project, not the Metic one: both have tables called `members` and 
 
 **SQL Editor → New query**, paste all of `db/schema.sql`, **Run**. It also makes the private storage for photos and voice notes, and turns on live updates.
 
+**Already set up before the Vault arrived?** Just run `db/migrations/002-vault.sql` the same way, once.
+
 ## 3. Your two keys
 
 No real emails needed. Each of you gets a made-up house address that only Supabase sees; nothing is ever sent to it, and the sign-in screens only ask for the key.
@@ -124,6 +126,21 @@ She breaks the seal, types that key, chooses her own (you won't know it), and wa
 
 Then add her voice-note reaction to the Lore as No. 001: **Us → Lore → Add → Voice note → Upload**, using a screen recording of it playing. Only the sound is kept, and you can trim the start and end.
 
+## The Vault, its own reveal
+
+The Vault has no door from Chez Bébé, so it arrives as its own moment. Seal "For our first month" for 1 December, then later that day text her:
+
+> One more thing. Some letters are kept somewhere else.
+> https://bhigayo.github.io/chez-bebe/vault.html
+
+She signs in as **The owner** with the same key, and adds it to her Home Screen too (Share → Add to Home Screen): it gets its own wax-seal icon.
+
+If you set up notifications before the Vault existed, redeploy the function once so Vault notifications open the Vault:
+
+```
+npx supabase functions deploy notify
+```
+
 ## Good to know
 
 - **Forgotten key?** There's no email to reset it by, so do it here: **SQL Editor**, change the key and run
@@ -132,5 +149,6 @@ Then add her voice-note reaction to the Lore as No. 001: **Us → Lore → Add �
 
 - **Try it without Supabase:** `npm run dev`. It runs as a demo in your browser, and the bar at the top switches between your side and hers.
 - **Voice notes** are saved as WAV, which plays on both iPhone and Android, whichever phone recorded it.
+- **The Vault** is its own app, at `https://bhigayo.github.io/chez-bebe/vault.html`, with its own Home Screen icon (a wax seal). There's no door to it from Chez Bébé; you send her the link. Same key as Chez Bébé, so no new account. Letters stay sealed until a date, until she decides ("Open when…"), until you're in the same room, or until your wedding day. The first meeting and wedding letters open only when you **both** turn your keys within the same day. Before then, only the envelope can be seen; the words can't be read even by looking in the database. Date letters open at midnight UK time, and show as ready the next time she opens the Vault.
 - **Backup:** Settings → Download a copy saves everything written as one file.
 - **Tests:** `npm test` checks the rules (crowns, streaks, court, quiet days, the timeline, the daily puzzle) and that strangers can't read or write anything.

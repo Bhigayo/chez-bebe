@@ -80,12 +80,12 @@ export function Keys({ onIn }: { onIn: (m: Member) => void }) {
   );
 }
 
-export function SignIn({ onIn }: { onIn: (m: Member) => void }) {
+export function SignIn({ onIn, vault }: { onIn: (m: Member) => void; vault?: boolean }) {
   const [who, setWho] = useState<"her" | "him" | null>(null);
   const [password, setPassword] = useState("");
   const { busy, error, run } = useAction();
   return (
-    <div className="reveal">
+    <div className={`reveal ${vault ? "vault-door-in" : ""}`}>
       <form
         className="envelope"
         onSubmit={(e) => {
@@ -98,8 +98,8 @@ export function SignIn({ onIn }: { onIn: (m: Member) => void }) {
           });
         }}
       >
-        <h1 className="wordmark">Chez Bébé</h1>
-        <p className="muted">Private residence. Two keys only.</p>
+        <h1 className="wordmark">{vault ? "The Vault" : "Chez Bébé"}</h1>
+        <p className="muted">{vault ? "Letters for later. The same key as Chez Bébé." : "Private residence. Two keys only."}</p>
         <div className="seg-btns">
           <button type="button" className={who === "her" ? "on" : ""} onClick={() => setWho("her")}>
             The owner
@@ -117,9 +117,11 @@ export function SignIn({ onIn }: { onIn: (m: Member) => void }) {
         <button className="btn primary wide" disabled={busy || !who}>
           {busy ? "Opening…" : "Let me in"}
         </button>
-        <a className="link" href="#/keys">
-          First time here? Accept your keys
-        </a>
+        {!vault && (
+          <a className="link" href="#/keys">
+            First time here? Accept your keys
+          </a>
+        )}
       </form>
     </div>
   );

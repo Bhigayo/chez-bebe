@@ -3,7 +3,7 @@ self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 
 self.addEventListener("push", (event) => {
-  let data = { title: "Chez Bébé", body: "" };
+  let data = { title: "Chez Bébé", body: "", url: "./" };
   try {
     data = { ...data, ...event.data.json() };
   } catch {
@@ -15,16 +15,20 @@ self.addEventListener("push", (event) => {
       icon: "icon-192.png",
       badge: "icon-192.png",
       tag: data.tag || undefined,
+      data: { url: data.url === "vault.html" ? "vault.html" : "./" },
     }),
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const url = new URL(event.notification.data?.url || "./", self.registration.scope).href;
+  const vault = url.endsWith("vault.html");
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
-      for (const c of list) if ("focus" in c) return c.focus();
-      return self.clients.openWindow("./");
+      // Bring the right app forward: the Vault for letters, Chez Bébé for everything else
+      for (const c of list) if (c.url.includes("vault.html") === vault && "focus" in c) return c.focus();
+      return self.clients.openWindow(url);
     }),
   );
 });

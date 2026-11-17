@@ -108,4 +108,60 @@ describe("chez bébé database", () => {
     expect(await as(HER, "select value from settings where key = 'first_meeting'")).toEqual([{ value: "2027-06-01" }]);
     expect(await as(STRANGER, "select value from settings")).toHaveLength(0);
   });
+
+  describe("the vault", () => {
+    const write = (by: string, seal: string, openOn: string | null = null, title = "A letter") =>
+      as<{ id: string }>(by, "insert into vault_letters (title, seal, open_on, body, audio) values ($1, $2, $3, 'the words', 'voice.wav') returning id", [title, seal, openOn]);
+    const open = (user: string, id: string) => as<{ r: { body: string; opened_at: string | null } }>(user, "select open_letter($1) as r", [id]);
+
+    it("shows the envelope but never the words before it opens", async () => {
+      const [{ id }] = await write(HIM, "date", "2099-12-20", "For your birthday");
+      expect(await as(HER, "select id, title, seal, open_on::text as open_on, opened_at from vault_letters")).toEqual([{ id, title: "For your birthday", seal: "date", open_on: "2099-12-20", opened_at: null }]);
+      await expect(as(HER, "select body from vault_letters")).rejects.toThrow(/permission denied/);
+      await expect(as(HER, "select * from vault_letters")).rejects.toThrow(/permission denied/);
+      await expect(open(HER, id)).rejects.toThrow(/STILL_SEALED/);
+      // The writer can always read and change their own, until it's opened
+      expect((await open(HIM, id))[0].r).toMatchObject({ body: "the words", opened_at: null });
+      await as(HIM, "update vault_letters set body = 'better words' where id = $1", [id]);
+      await expect(as(HER, "update vault_letters set body = 'mine' where id = $1", [id])).resolves.toEqual([]);
+      expect((await open(HIM, id))[0].r.body).toBe("better words");
+      expect(await as(STRANGER, "select id from vault_letters")).toHaveLength(0);
+    });
+
+    it("opens on its date, and marks it opened for the writer to see", async () => {
+      const [{ id }] = await write(HIM, "date", "2020-01-01");
+      const [{ r }] = await open(HER, id);
+      expect(r.body).toBe("the words");
+      expect(r.opened_at).not.toBeNull();
+      // Once opened it's hers: no more changes or deleting
+      await as(HIM, "update vault_letters set body = 'changed' where id = $1", [id]);
+      await as(HIM, "delete from vault_letters where id = $1", [id]);
+      expect((await open(HER, id))[0].r.body).toBe("the words");
+      await expect(as(HER, "update vault_letters set opened_at = null where id = $1", [id])).rejects.toThrow(/permission denied/);
+    });
+
+    it("lets 'open when' letters open whenever she decides", async () => {
+      const [{ id }] = await write(HER, "when", null, "Open when you miss me");
+      expect((await open(HIM, id))[0].r.body).toBe("the words");
+    });
+
+    it("only opens the first-meeting and wedding letters when you both turn your keys", async () => {
+      const [{ id }] = await write(HIM, "wedding");
+      await expect(open(HER, id)).rejects.toThrow(/STILL_SEALED/);
+      expect((await as<{ r: boolean }>(HER, "select turn_key('wedding') as r"))[0].r).toBe(false);
+      await expect(open(HER, id)).rejects.toThrow(/STILL_SEALED/);
+      // Turning yours again doesn't count twice
+      expect((await as<{ r: boolean }>(HER, "select turn_key('wedding') as r"))[0].r).toBe(false);
+      // A key turned more than a day ago doesn't count
+      await db.query("update vault_keys set turned_at = now() - interval '2 days'");
+      expect((await as<{ r: boolean }>(HIM, "select turn_key('wedding') as r"))[0].r).toBe(false);
+      expect((await as<{ r: boolean }>(HER, "select turn_key('wedding') as r"))[0].r).toBe(true);
+      expect((await open(HER, id))[0].r.body).toBe("the words");
+      // The meeting letters are still sealed
+      const [{ id: m }] = await write(HIM, "meeting");
+      await expect(open(HER, m)).rejects.toThrow(/STILL_SEALED/);
+      await expect(as(STRANGER, "select turn_key('meeting')")).rejects.toThrow(/NOT_MEMBER/);
+      await expect(as(HER, "insert into vault_unlocks values ('meeting')")).rejects.toThrow(/permission denied/);
+    });
+  });
 });

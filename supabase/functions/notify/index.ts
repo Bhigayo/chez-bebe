@@ -34,13 +34,15 @@ Deno.serve(async (req) => {
   const partner = members.find((m) => m.user_id !== auth.user!.id);
   if (!partner) return json({ sent: 0 });
 
-  let body: { title?: string; body?: string } = {};
+  let body: { title?: string; body?: string; url?: string } = {};
   try {
     body = await req.json();
   } catch {
     // empty is fine
   }
-  const payload = JSON.stringify({ title: String(body.title ?? "Chez Bébé").slice(0, 80), body: String(body.body ?? "").slice(0, 240) });
+  // Which app the notification opens: only these two
+  const url = body.url === "vault.html" ? "vault.html" : "./";
+  const payload = JSON.stringify({ title: String(body.title ?? "Chez Bébé").slice(0, 80), body: String(body.body ?? "").slice(0, 240), url });
 
   webpush.setVapidDetails(Deno.env.get("VAPID_SUBJECT") ?? "mailto:hello@example.com", pub, priv);
   const { data: subs } = await admin.from("push_subs").select("endpoint, keys").eq("by", partner.user_id);

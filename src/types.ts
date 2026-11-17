@@ -46,6 +46,15 @@ export type Here = Row;
 export type SavedNote = Row & { text: string };
 export type Setting = { key: string; value: string | null };
 
+/* The Vault. Only the envelope is ever loaded; the words come when it opens. */
+export type Seal = "date" | "when" | "meeting" | "wedding";
+export type Envelope = Row & { title: string; seal: Seal; open_on: string | null; opened_at: string | null };
+export type LetterContent = { id: string; body: string | null; image: string | null; audio: string | null; peaks: number[] | null; opened_at: string | null };
+export type Letter = { title: string; seal: Seal; open_on: string | null; body: string | null; image: string | null; audio: string | null; peaks: number[] | null };
+export type Occasion = "meeting" | "wedding";
+export type VaultKey = { user_id: string; occasion: Occasion; turned_at: string };
+export type VaultUnlock = { occasion: Occasion; unlocked_at: string };
+
 export type Tables = {
   checkins: Checkin[];
   greetings: Greeting[];
@@ -59,9 +68,12 @@ export type Tables = {
   here: Here[];
   saved_notes: SavedNote[];
   settings: Setting[];
+  vault_letters: Envelope[];
+  vault_keys: VaultKey[];
+  vault_unlocks: VaultUnlock[];
 };
 export type TableName = keyof Tables;
-export const TABLES: TableName[] = ["checkins", "greetings", "cases", "decrees", "pins", "goals", "duels", "lore", "dates", "here", "saved_notes", "settings"];
+export const TABLES: TableName[] = ["checkins", "greetings", "cases", "decrees", "pins", "goals", "duels", "lore", "dates", "here", "saved_notes", "settings", "vault_letters", "vault_keys", "vault_unlocks"];
 
 export const emptyTables = (): Tables => ({
   checkins: [],
@@ -76,4 +88,7 @@ export const emptyTables = (): Tables => ({
   here: [],
   saved_notes: [],
   settings: [],
+  vault_letters: [],
+  vault_keys: [],
+  vault_unlocks: [],
 });

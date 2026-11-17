@@ -21,6 +21,7 @@ import Us from "./Us";
 // #/                home          #/court, #/court/decrees
 // #/play            daily duel    #/board
 // #/us, #/us/timeline             #/keys  (her first visit)
+// The Vault is a separate app: vault.html
 const route = () => location.hash.replace(/^#\/?/, "").split("/");
 
 function App() {

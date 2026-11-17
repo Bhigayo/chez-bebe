@@ -1,7 +1,7 @@
 // The rules of Chez Bébé: crowns, streaks, the court record, quiet days and the timeline.
 // Worked out from what's stored, so nothing can drift out of step.
 
-import type { Case, Checkin, Duel, Goal, Greeting, Here, KeyDate, Member, Tables, Who } from "./types";
+import type { Case, Checkin, Duel, Envelope, Goal, Greeting, Here, KeyDate, Member, Occasion, Tables, VaultKey, VaultUnlock, Who } from "./types";
 
 /** "Today" is the same for both of you: the UK date. */
 export const dayKey = (d: Date | string = new Date()) =>
@@ -188,3 +188,11 @@ export function together(since: string, now = new Date()) {
 }
 
 export const plural = (n: number, word: string, many = word.endsWith("y") && !/[aeiou]y$/.test(word) ? `${word.slice(0, -1)}ies` : `${word}s`) => `${n} ${n === 1 ? word : many}`;
+
+/* ---------- The Vault (the database decides for real; this is for showing it) ---------- */
+export const letterReady = (e: Pick<Envelope, "seal" | "open_on">, unlocks: VaultUnlock[], now = new Date()) =>
+  e.seal === "when" ? true : e.seal === "date" ? !!e.open_on && e.open_on <= dayKey(now) : unlocks.some((u) => u.occasion === e.seal);
+
+/** Who has turned their key for an occasion, in the last 24 hours. */
+export const keysTurned = (keys: VaultKey[], occasion: Occasion, now = new Date()) =>
+  keys.filter((k) => k.occasion === occasion && now.getTime() - Date.parse(k.turned_at) < 24 * 3600_000).map((k) => k.user_id);
