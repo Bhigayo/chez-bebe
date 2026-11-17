@@ -10,7 +10,8 @@ import "@fontsource/caveat/500.css";
 import "@fontsource/caveat/700.css";
 import "@fontsource/permanent-marker/400.css";
 import "./styles.css";
-import { ChezProvider } from "./data";
+import { ChezProvider, useChez } from "./data";
+import { VaultGuide } from "./Guide";
 import { SignIn } from "./Keys";
 import { demoSwitch, store } from "./store";
 import { useAction } from "./ui";
@@ -39,10 +40,32 @@ function App() {
 }
 
 function Footer({ onSignOut }: { onSignOut: () => void }) {
+  const { me } = useChez();
+  const seenKey = `chez:vault-guide:${me.user_id}`;
+  // The guide opens by itself the first time
+  const [guide, setGuide] = useState(() => {
+    try {
+      return !localStorage.getItem(seenKey);
+    } catch {
+      return false;
+    }
+  });
+  const closeGuide = () => {
+    try {
+      localStorage.setItem(seenKey, "1");
+    } catch {
+      // fine
+    }
+    setGuide(false);
+  };
   const [push, setPush] = useState<string | null>(null);
   const { run } = useAction();
   return (
     <footer className="vault-foot">
+      <button className="link" onClick={() => setGuide(true)}>
+        How the Vault works
+      </button>
+      {guide && <VaultGuide onClose={closeGuide} />}
       <button
         className="link"
         onClick={() =>

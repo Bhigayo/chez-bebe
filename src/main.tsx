@@ -10,6 +10,7 @@ import "./styles.css";
 import Board from "./Board";
 import Court from "./Court";
 import { ChezProvider, useChez } from "./data";
+import { HouseGuide } from "./Guide";
 import Home from "./Home";
 import { Keys, SignIn } from "./Keys";
 import Play from "./Play";
@@ -43,7 +44,7 @@ function App() {
       <Keys
         onIn={(m) => {
           setMe(m);
-          location.hash = "#/";
+          location.hash = "#/guide/first";
         }}
       />
     );
@@ -93,6 +94,8 @@ function Shell({ r, onSignOut }: { r: string[]; onSignOut: () => void }) {
           <Play />
         ) : page === "board" ? (
           <Board />
+        ) : page === "guide" ? (
+          <HouseGuide first={r[1] === "first"} />
         ) : page === "us" ? (
           <Us tab={r[1] === "timeline" ? "timeline" : "lore"} />
         ) : (
@@ -122,6 +125,11 @@ function Settings({ onClose, onSignOut, partnerName }: { onClose: () => void; on
   const installed = matchMedia("(display-mode: standalone)").matches;
   return (
     <Sheet title="Settings" onClose={onClose}>
+      <section className="set">
+        <a className="btn" href="#/guide" onClick={onClose}>
+          How the house works
+        </a>
+      </section>
       <section className="set">
         <h3>Notifications</h3>
         <p className="muted small">So decrees, cases and good mornings from {partnerName} reach you even when the app is closed.</p>

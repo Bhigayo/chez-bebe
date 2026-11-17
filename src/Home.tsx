@@ -218,6 +218,10 @@ export default function Home() {
         </a>
       )}
 
+      <p className="guide-link">
+        <a href="#/guide">How the house works</a>
+      </p>
+
       {sheet === "checkin" && <CheckIn onClose={() => setSheet(null)} current={mine} />}
       {sheet === "greet" && <Greet onClose={() => setSheet(null)} />}
     </div>

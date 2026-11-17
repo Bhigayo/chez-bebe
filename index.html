@@ -15,6 +15,24 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      /* If this browser can't run the site, explain instead of showing a blank page */
+      setTimeout(function () {
+        var root = document.getElementById("root");
+        if (!root || root.children.length) return;
+        var ua = navigator.userAgent;
+        var name = /OPR|Opera Mini|OPiOS/.test(ua) ? "Opera" : /SamsungBrowser/.test(ua) ? "Samsung Internet" : /UCBrowser/.test(ua) ? "UC Browser" : /Edg/.test(ua) ? "Edge" : /Chrome/.test(ua) ? "Chrome" : /Firefox/.test(ua) ? "Firefox" : /Safari/.test(ua) ? "Safari" : "this browser";
+        var mini = /Opera Mini|OPiOS/.test(ua);
+        root.innerHTML =
+          '<div style="max-width:440px;margin:15vh auto;padding:24px;font:16px/1.5 system-ui,sans-serif;text-align:center;color:#2a1b1a">' +
+          '<p style="font-size:20px;margin:0 0 10px">This page couldn\'t open in ' + name + '.</p>' +
+          (mini ? '<p>Opera Mini\'s data saver can\'t run it. Open the link in <b>Chrome</b> instead, or turn data saving off.</p>'
+                : '<p>The browser is probably out of date. Update <b>' + name + '</b> (or Chrome) from the Play Store or the Microsoft Store, then open the link again.</p>') +
+          ''+ +
+          '<p style="font-size:12px;color:#8f7c75;word-break:break-all;margin-top:18px">' + ua.replace(/</g, "") + '</p></div>';
+      }, 7000);
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
