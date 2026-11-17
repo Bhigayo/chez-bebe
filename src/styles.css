@@ -2003,3 +2003,473 @@ body.vault-body {
   font: 12px var(--sans);
   color: var(--muted);
 }
+
+/* ---------- Vault: envelope fronts (handmade, like the paper ones) ---------- */
+.envs {
+  display: grid;
+  gap: 14px;
+}
+
+.envs.small {
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.env2 {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #e9d9cf;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.env2.sealed {
+  cursor: default;
+}
+
+.env-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #c8b4ab;
+  padding: 0 4px;
+}
+
+.envs.small .env-line {
+  font-size: 12px;
+}
+
+.front {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 2;
+  container-type: inline-size;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #f3ecd9;
+  color: #2a1b1a;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset, 0 12px 28px -14px rgba(0, 0, 0, 0.8);
+  transition: transform 0.2s;
+}
+
+.env2:not(.sealed):active .front {
+  transform: scale(0.98) rotate(-0.5deg);
+}
+
+.env2.ready .front {
+  box-shadow: 0 0 0 2px #d9b273, 0 16px 34px -12px rgba(217, 178, 115, 0.65);
+  animation: glow 3s ease-in-out infinite;
+}
+
+.env2.sealed .front {
+  filter: saturate(0.75) brightness(0.92);
+}
+
+.env2.opened .front {
+  filter: saturate(0.6) brightness(0.7);
+}
+
+.doodle {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.front-kicker {
+  position: absolute;
+  top: 6%;
+  left: 5%;
+  font: 500 6.2cqi/1 "Caveat", cursive;
+  color: #3d2b28;
+}
+
+.front-title {
+  position: absolute;
+  inset: 22% 8% 16%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font: 400 min(10cqi, calc(var(--fit) * 1.25))/1.05 "Permanent Marker", cursive;
+  overflow-wrap: normal;
+}
+
+.front-wax {
+  position: absolute;
+  right: 5%;
+  bottom: 7%;
+  width: 15cqi;
+  height: 15cqi;
+}
+
+.front-wax i {
+  font-size: 7.5cqi;
+}
+
+.front-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Each style, like a different pen */
+.s-hearts .front-title {
+  font: 700 min(12.5cqi, calc(var(--fit) * 1.9))/1 "Caveat", cursive;
+}
+
+.s-clouds .front-title {
+  color: #1f5b5a;
+  font-size: min(13cqi, calc(var(--fit) * 1.25));
+}
+
+.s-sunburst .front-title {
+  inset: 26% 18% 20%;
+  font-size: min(10.5cqi, calc(var(--fit) * 0.95));
+}
+
+.s-balloon .front-title {
+  inset: 24% 22% 16% 6%;
+  font-size: min(10cqi, calc(var(--fit) * 1.05));
+}
+
+.s-rings .front-title {
+  font: 700 min(9cqi, calc(var(--fit) * 1.15))/1.05 var(--sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  inset: 18% 8% 30%;
+}
+
+.s-corners {
+  background: #f6efdf;
+}
+
+.s-corners .front-title {
+  font: 500 min(9.5cqi, calc(var(--fit) * 1.2))/1.1 var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.s-corners .front-kicker {
+  left: 14%;
+}
+
+.s-stripes {
+  background: repeating-linear-gradient(-35deg, #fdfbf6 0 9px, #f7b3b3 9px 11px, #fdfbf6 11px 20px, #b9d7f2 20px 22px, #fdfbf6 22px 31px, #f6dd8b 31px 33px, #fdfbf6 33px 42px, #b9e3c5 42px 44px);
+}
+
+.s-stripes .front-title {
+  font: 700 min(15cqi, calc(var(--fit) * 1.45))/1 "Caveat", cursive;
+  color: #3a3a7a;
+  text-transform: uppercase;
+}
+
+.s-kraft {
+  background: linear-gradient(160deg, #c9a27a, #b48a62);
+}
+
+.s-kraft .front-title {
+  font: 700 min(12cqi, calc(var(--fit) * 1.9))/1 "Caveat", cursive;
+  color: #3b2516;
+}
+
+.s-kraft .front-kicker {
+  color: #3b2516;
+}
+
+.front-drop {
+  display: block;
+  cursor: pointer;
+}
+
+.front-empty {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  aspect-ratio: 3 / 2;
+  border: 1.5px dashed var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.style-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.style-pick button {
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+}
+
+.style-pick button.on {
+  border-color: var(--wine);
+}
+
+/* ---------- Vault: the paper ---------- */
+.letter {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.paper {
+  padding: 26px 22px 18px;
+  border-radius: 3px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  color: #2a1b1a;
+}
+
+.p-cream {
+  background: linear-gradient(180deg, #fffdf7, #f7efe1);
+}
+
+.p-lined {
+  background:
+    linear-gradient(90deg, transparent 34px, #e8a3a3 34px, #e8a3a3 35px, transparent 35px),
+    repeating-linear-gradient(180deg, #fdfdfb 0 31px, #b9cde2 31px 32px),
+    #fdfdfb;
+  padding-left: 46px;
+}
+
+.p-kraft {
+  background: linear-gradient(170deg, #d9b98f, #c9a479);
+  color: #2e1d12;
+}
+
+.paper-title {
+  display: block;
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wine);
+}
+
+.p-lined .letter-body,
+.p-kraft .letter-body {
+  font: 500 25px/32px "Caveat", cursive;
+}
+
+.p-lined .letter-body {
+  margin-top: 12px;
+}
+
+.taped {
+  position: relative;
+  display: block;
+  margin: 18px 6px;
+  rotate: -2deg;
+  padding: 8px 8px 22px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.taped::before,
+.taped::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  width: 70px;
+  height: 22px;
+  background: rgba(240, 225, 170, 0.75);
+}
+
+.taped::before {
+  left: 12px;
+  rotate: -6deg;
+}
+
+.taped::after {
+  right: 12px;
+  rotate: 5deg;
+}
+
+.taped .letter-img {
+  margin: 0;
+  border-radius: 0;
+}
+
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.mini-card {
+  flex: 1 1 140px;
+  padding: 16px 14px;
+  background: #fff;
+  border: 1px solid #e3e3ef;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+  font: 400 22px/1.1 "Permanent Marker", cursive;
+  color: #3e6fc2;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.take {
+  margin: 22px 0 8px;
+  padding: 16px 14px 14px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  rotate: 0.6deg;
+}
+
+.take-head {
+  margin: 0 0 10px;
+  font: 400 26px "Permanent Marker", cursive;
+  color: #3e6fc2;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.take-head em {
+  font: italic 700 30px "Caveat", cursive;
+  text-transform: none;
+}
+
+.tabs-row {
+  display: flex;
+  border-top: 1.5px dashed #9fb4d6;
+}
+
+.tab {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 118px;
+  padding: 8px 0;
+  border: 0;
+  border-right: 1.5px dashed #9fb4d6;
+  background: #fff;
+  cursor: pointer;
+  transition: transform 0.55s cubic-bezier(0.5, 0, 0.8, 0.3), opacity 0.55s;
+}
+
+.tab:last-child {
+  border-right: 0;
+}
+
+.tab span {
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  font: 400 15px "Permanent Marker", cursive;
+  color: #3e6fc2;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tab.tearing {
+  transform: translateY(70px) rotate(14deg);
+  opacity: 0;
+}
+
+.tab.gone {
+  background: repeating-linear-gradient(180deg, #fff 0 4px, transparent 4px 7px);
+  min-height: 18px;
+  align-self: start;
+}
+
+.tab:disabled:not(.tearing) {
+  cursor: default;
+}
+
+.take-hint {
+  display: block;
+  margin-top: 8px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.taken {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.taken-note {
+  padding: 10px 12px;
+  border-left: 3px solid #3e6fc2;
+  background: #f3f7fd;
+}
+
+.taken-note b {
+  font: 400 15px "Permanent Marker", cursive;
+  color: #3e6fc2;
+  text-transform: uppercase;
+}
+
+.taken-note p {
+  margin: 4px 0 0;
+  font: 500 22px/1.25 "Caveat", cursive;
+}
+
+.letter .fold {
+  margin-top: 14px;
+}
+
+/* ---------- Vault: writing ---------- */
+.letter-write.w-lined {
+  font: 500 22px/1.4 "Caveat", cursive !important;
+}
+
+.letter-write.w-kraft {
+  font: 500 22px/1.4 "Caveat", cursive !important;
+  background: #e6cfae !important;
+}
+
+.extras {
+  margin: 14px 0;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.extras summary {
+  cursor: pointer;
+  font: italic 400 20px var(--serif);
+}
+
+.tab-edit {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  align-items: start;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.tab-edit input,
+.tab-edit textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.tab-edit textarea {
+  grid-column: 1;
+}
+
+.tab-edit .icon-btn {
+  grid-column: 2;
+  grid-row: 1;
+}

@@ -164,4 +164,34 @@ describe("chez bébé database", () => {
       await expect(as(HER, "insert into vault_unlocks values ('meeting')")).rejects.toThrow(/permission denied/);
     });
   });
+
+  describe("vault extras", () => {
+    it("shows the envelope front, keeps the paper, tabs and cards sealed, and lets each tab be torn once", async () => {
+      const [{ id }] = await as<{ id: string }>(
+        HIM,
+        `insert into vault_letters (title, seal, envelope, envelope_photo, body, paper, tabs, cards)
+         values ('Open when you have a bad day', 'when', '{"style":"clouds"}', 'him/front.jpg', 'baby,', 'lined',
+                 '[{"label":"Strength","note":"You are stronger than this day."},{"label":"Laughter","note":"Remember the citizen?"}]',
+                 '["A bad day only lasts 24 hours"]') returning id`,
+      );
+      expect(await as(HER, "select envelope, envelope_photo from vault_letters")).toEqual([{ envelope: { style: "clouds" }, envelope_photo: "him/front.jpg" }]);
+      await expect(as(HER, "select tabs from vault_letters")).rejects.toThrow(/permission denied/);
+      await expect(as(HER, "select cards from vault_letters")).rejects.toThrow(/permission denied/);
+      await expect(as(HER, "select tear_tab($1, 0)", [id])).rejects.toThrow(/STILL_SEALED/);
+      const [{ r }] = await as<{ r: { paper: string; tabs: unknown[]; cards: string[]; torn: number[] } }>(HER, "select open_letter($1) as r", [id]);
+      expect(r).toMatchObject({ paper: "lined", cards: ["A bad day only lasts 24 hours"], torn: [] });
+      expect(r.tabs).toHaveLength(2);
+      expect((await as<{ t: number[] }>(HER, "select tear_tab($1, 1) as t", [id]))[0].t).toEqual([1]);
+      expect((await as<{ t: number[] }>(HER, "select tear_tab($1, 1) as t", [id]))[0].t).toEqual([1]);
+      await expect(as(HER, "select tear_tab($1, 5)", [id])).rejects.toThrow(/NOT_FOUND/);
+      await expect(as(HIM, "select tear_tab($1, 0)", [id])).rejects.toThrow(/NOT_YOURS/);
+      await expect(as(HER, "update vault_letters set torn = '[]' where id = $1", [id])).rejects.toThrow(/permission denied/);
+    });
+
+    it("opens an 'Open now!' letter straight away", async () => {
+      const [{ id }] = await as<{ id: string }>(HIM, "insert into vault_letters (title, seal, body) values ('Open now!', 'now', 'Welcome to the Vault.') returning id");
+      expect((await as<{ r: { body: string } }>(HER, "select open_letter($1) as r", [id]))[0].r.body).toBe("Welcome to the Vault.");
+      await expect(as(HIM, "insert into vault_letters (title, seal, paper) values ('x', 'now', 'glitter')")).rejects.toThrow(/check constraint/);
+    });
+  });
 });

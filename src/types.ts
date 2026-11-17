@@ -47,10 +47,38 @@ export type SavedNote = Row & { text: string };
 export type Setting = { key: string; value: string | null };
 
 /* The Vault. Only the envelope is ever loaded; the words come when it opens. */
-export type Seal = "date" | "when" | "meeting" | "wedding";
-export type Envelope = Row & { title: string; seal: Seal; open_on: string | null; opened_at: string | null };
-export type LetterContent = { id: string; body: string | null; image: string | null; audio: string | null; peaks: number[] | null; opened_at: string | null };
-export type Letter = { title: string; seal: Seal; open_on: string | null; body: string | null; image: string | null; audio: string | null; peaks: number[] | null };
+export type Seal = "date" | "when" | "meeting" | "wedding" | "now";
+export type EnvelopeStyle = "hearts" | "clouds" | "sunburst" | "rings" | "balloon" | "corners" | "stripes" | "kraft";
+export type Paper = "lined" | "cream" | "kraft";
+export type Tab = { label: string; note: string };
+/** What's visible before it opens: the envelope, front and all */
+export type Envelope = Row & { title: string; seal: Seal; open_on: string | null; opened_at: string | null; envelope: { style: EnvelopeStyle } | null; envelope_photo: string | null };
+export type LetterContent = {
+  id: string;
+  body: string | null;
+  image: string | null;
+  audio: string | null;
+  peaks: number[] | null;
+  opened_at: string | null;
+  paper: Paper | null;
+  tabs: Tab[] | null;
+  cards: string[] | null;
+  torn: number[];
+};
+export type Letter = {
+  title: string;
+  seal: Seal;
+  open_on: string | null;
+  body: string | null;
+  image: string | null;
+  audio: string | null;
+  peaks: number[] | null;
+  envelope: { style: EnvelopeStyle } | null;
+  envelope_photo: string | null;
+  paper: Paper;
+  tabs: Tab[] | null;
+  cards: string[] | null;
+};
 export type Occasion = "meeting" | "wedding";
 export type VaultKey = { user_id: string; occasion: Occasion; turned_at: string };
 export type VaultUnlock = { occasion: Occasion; unlocked_at: string };

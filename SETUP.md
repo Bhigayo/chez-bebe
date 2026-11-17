@@ -15,7 +15,10 @@ Use a **new** project, not the Metic one: both have tables called `members` and 
 
 **SQL Editor → New query**, paste all of `db/schema.sql`, **Run**. It also makes the private storage for photos and voice notes, and turns on live updates.
 
-**Already set up before the Vault arrived?** Just run `db/migrations/002-vault.sql` the same way, once.
+**Already set up before?** Run whichever of these you haven't yet, in order, the same way, once each:
+
+- `db/migrations/002-vault.sql`: the Vault
+- `db/migrations/003-vault-extras.sql`: hand-drawn envelope fronts, paper, tear-off tabs, little cards and "Open now!"
 
 ## 3. Your two keys
 
@@ -133,6 +136,8 @@ The Vault has no door from Chez Bébé, so it arrives as its own moment. Seal "F
 > One more thing. Some letters are kept somewhere else.
 > https://bhigayo.github.io/chez-bebe/vault.html
 
+Seal an **Open now!** letter too (it opens straight away): a short note on what the Vault is and how the envelopes work.
+
 She signs in as **The owner** with the same key, and adds it to her Home Screen too (Share → Add to Home Screen): it gets its own wax-seal icon.
 
 If you set up notifications before the Vault existed, redeploy the function once so Vault notifications open the Vault:
@@ -140,6 +145,12 @@ If you set up notifications before the Vault existed, redeploy the function once
 ```
 npx supabase functions deploy notify
 ```
+
+## Drawing your own envelope fronts
+
+1. Hand-letter the front on paper or card, like the "Open when…" envelopes: a little "Open when…" in the corner and the big words in the middle. Leave the bottom-right corner fairly clear, because the wax seal sits there.
+2. Lay it flat in daylight, hold the phone straight above it, and fill the frame. Landscape (wider than tall) fits best.
+3. In the Vault: **Write a letter → The envelope front → My own drawing**, and pick the photo.
 
 ## Good to know
 

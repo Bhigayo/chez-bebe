@@ -191,7 +191,7 @@ export const plural = (n: number, word: string, many = word.endsWith("y") && !/[
 
 /* ---------- The Vault (the database decides for real; this is for showing it) ---------- */
 export const letterReady = (e: Pick<Envelope, "seal" | "open_on">, unlocks: VaultUnlock[], now = new Date()) =>
-  e.seal === "when" ? true : e.seal === "date" ? !!e.open_on && e.open_on <= dayKey(now) : unlocks.some((u) => u.occasion === e.seal);
+  e.seal === "when" || e.seal === "now" ? true : e.seal === "date" ? !!e.open_on && e.open_on <= dayKey(now) : unlocks.some((u) => u.occasion === e.seal);
 
 /** Who has turned their key for an occasion, in the last 24 hours. */
 export const keysTurned = (keys: VaultKey[], occasion: Occasion, now = new Date()) =>

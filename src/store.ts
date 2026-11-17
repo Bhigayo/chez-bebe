@@ -33,9 +33,11 @@ export interface Store {
   openLetter(id: string): Promise<LetterContent>;
   /** Returns true once you've both turned your keys */
   turnKey(o: Occasion): Promise<boolean>;
+  /** Tears off one "take what you need" tab; returns all the torn ones */
+  tearTab(id: string, index: number): Promise<number[]>;
 }
 
-const ENVELOPE = "id,created_at,by,title,seal,open_on,opened_at";
+const ENVELOPE = "id,created_at,by,title,seal,open_on,opened_at,envelope,envelope_photo";
 const NO_DATES: TableName[] = ["settings", "vault_keys", "vault_unlocks"];
 
 export class ChezError extends Error {}
@@ -178,6 +180,9 @@ function supabaseStore(url: string, key: string): Store {
     async turnKey(o) {
       return check(await sb.rpc("turn_key", { p_occasion: o })) as boolean;
     },
+    async tearTab(id, index) {
+      return check(await sb.rpc("tear_tab", { p_id: id, p_index: index })) as number[];
+    },
   };
 }
 
@@ -245,9 +250,11 @@ function demoSeed(): Tables {
   t.greetings = [1, 2, 3].map((d) => ({ ...base(DEMO_HIM, at(d, 8)), text: "Good morning to Her Imperial Majesty.", reply: "Acknowledged.", replied_at: at(d, 9) }));
   t.saved_notes = [{ ...base(DEMO_HIM, at(5)), text: "I love you so much. My day isn't the best, but I hope yours is going better. How's it going?" }];
   t.vault_letters = [
-    { ...base(DEMO_HIM, at(2)), title: "For your birthday", seal: "date", open_on: "2026-12-20", opened_at: null },
-    { ...base(DEMO_HIM, at(2)), title: "Open when you miss me", seal: "when", open_on: null, opened_at: null },
-    { ...base(DEMO_HIM, at(1)), title: "For our wedding day", seal: "wedding", open_on: null, opened_at: null },
+    { ...base(DEMO_HIM, at(3)), title: "Open now!", seal: "now", open_on: null, opened_at: null, envelope: { style: "stripes" }, envelope_photo: null },
+    { ...base(DEMO_HIM, at(2)), title: "For your birthday", seal: "date", open_on: "2026-12-20", opened_at: null, envelope: { style: "balloon" }, envelope_photo: null },
+    { ...base(DEMO_HIM, at(2)), title: "Open when you've had a bad day", seal: "when", open_on: null, opened_at: null, envelope: { style: "clouds" }, envelope_photo: null },
+    { ...base(DEMO_HIM, at(2)), title: "Open when you miss me", seal: "when", open_on: null, opened_at: null, envelope: { style: "sunburst" }, envelope_photo: null },
+    { ...base(DEMO_HIM, at(1)), title: "For our wedding day", seal: "wedding", open_on: null, opened_at: null, envelope: { style: "rings" }, envelope_photo: null },
   ];
   t.cases = [
     {
@@ -273,7 +280,27 @@ function demoStore(): Store {
       // start fresh
     }
     const seed = demoSeed();
-    saveWords(Object.fromEntries(seed.vault_letters.map((e) => [e.id, { id: e.id, body: `(Demo) ${e.title}. This is where the letter goes.`, image: null, audio: null, peaks: null, opened_at: null }])));
+    saveWords(
+      Object.fromEntries(
+        seed.vault_letters.map((e) => [
+          e.id,
+          {
+            id: e.id,
+            body: `(Demo) ${e.title}.\n\nThis is where the letter goes, in your own words.`,
+            image: null,
+            audio: null,
+            peaks: null,
+            opened_at: null,
+            paper: e.title.includes("bad day") ? "lined" : "cream",
+            tabs: e.title.includes("bad day")
+              ? ["Inspiration", "Confidence", "Strength", "Happiness", "Laughter", "Peace"].map((label) => ({ label, note: `(Demo) A little note about ${label.toLowerCase()}.` }))
+              : null,
+            cards: e.title.includes("bad day") ? ["A bad day only lasts 24 hours."] : null,
+            torn: [],
+          } satisfies LetterContent,
+        ]),
+      ),
+    );
     save(seed);
     return seed;
   };
@@ -361,21 +388,21 @@ function demoStore(): Store {
     },
     async writeLetter(l) {
       const t = load();
-      const { body, image, audio, peaks, ...env } = l;
+      const { body, image, audio, peaks, paper, tabs, cards, ...env } = l;
       const e: Envelope = { id: crypto.randomUUID(), created_at: new Date().toISOString(), by: as(), opened_at: null, ...env };
       t.vault_letters.push(e);
       const words = vaultWords();
-      words[e.id] = { id: e.id, body, image, audio, peaks, opened_at: null };
+      words[e.id] = { id: e.id, body, image, audio, peaks, paper, tabs, cards, torn: [], opened_at: null };
       saveWords(words);
       save(t);
       return e;
     },
     async editLetter(id, l) {
       const t = load();
-      const { body, image, audio, peaks, ...env } = l;
+      const { body, image, audio, peaks, paper, tabs, cards, ...env } = l;
       t.vault_letters = t.vault_letters.map((e) => (e.id === id ? { ...e, ...env } : e));
       const words = vaultWords();
-      words[id] = { ...words[id], ...Object.fromEntries(Object.entries({ body, image, audio, peaks }).filter(([, v]) => v !== undefined)) };
+      words[id] = { ...words[id], ...Object.fromEntries(Object.entries({ body, image, audio, peaks, paper, tabs, cards }).filter(([, v]) => v !== undefined)) };
       saveWords(words);
       save(t);
     },
@@ -390,7 +417,19 @@ function demoStore(): Store {
           save(t);
         }
       }
-      return { ...(vaultWords()[id] ?? { id, body: null, image: null, audio: null, peaks: null }), opened_at: e.opened_at };
+      const blank: LetterContent = { id, body: null, image: null, audio: null, peaks: null, paper: null, tabs: null, cards: null, torn: [], opened_at: null };
+      return { ...blank, ...vaultWords()[id], opened_at: e.opened_at };
+    },
+    async tearTab(id, index) {
+      const t = load();
+      const e = t.vault_letters.find((x) => x.id === id);
+      const words = vaultWords();
+      const w = words[id];
+      if (!e || !w || e.by === as() || !e.opened_at || !w.tabs?.[index]) throw new ChezError("That tab isn't there.");
+      if (!w.torn?.includes(index)) w.torn = [...(w.torn ?? []), index];
+      saveWords(words);
+      channel?.postMessage("changed");
+      return w.torn;
     },
     async turnKey(o) {
       const t = load();

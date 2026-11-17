@@ -16,7 +16,7 @@ Setup is in **SETUP.md**.
 - **Crowns and goals:** everything you do earns crowns, and they fill the other one's goals: his crowns build her castle, hers build towards GTA 6.
 - **Lore:** quotes, moments, photos and voice notes, numbered from No. 001. Voice notes can come from a screen recording; only the sound is kept, trimmed.
 - **Timeline:** your dates, monthly and yearly anniversaries, "together for…", and the first time in the same room (date to be decided).
-- **The Vault** (`#/vault`): its own quiet room. Letters with text, photos and voice notes, sealed until a date, until "Open when…", until the first time in the same room, or until the wedding day (both of you turn your keys). Truly sealed: only the envelope is visible until then. The writer is told when it's opened.
+- **The Vault** (`#/vault`): its own quiet room. Letters with text, photos and voice notes, sealed until a date, until "Open when…", until the first time in the same room, or until the wedding day (both of you turn your keys). Truly sealed: only the envelope is visible until then. The writer is told when it's opened. Envelope fronts are a photo of your own hand-drawn one, or one of eight styles; letters come on writing paper, notebook paper or brown kraft, with a taped-in photo, little cards, and "take what you need" tear-off tabs (each torn once). "Open now!" letters open straight away.
 - **The reveal** (`#/keys`): an official notice, the keys, a key of her own, and "Welcome home".
 
 ## Run it (PowerShell, one line at a time)
