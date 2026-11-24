@@ -19,6 +19,7 @@ Use a **new** project, not the Metic one: both have tables called `members` and 
 
 - `db/migrations/002-vault.sql`: the Vault
 - `db/migrations/003-vault-extras.sql`: hand-drawn envelope fronts, paper, tear-off tabs, little cards and "Open now!"
+- `db/migrations/004-passport.sql`: the Passport (swipe on countries, stamps, the first trip)
 
 ## 3. Your two keys
 

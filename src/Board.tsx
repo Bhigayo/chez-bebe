@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useChez } from "./data";
 import { markBoardSeen } from "./Home";
 import { crowns, goalProgress } from "./logic";
+import { BoardTabs } from "./Passport";
 import { store } from "./store";
 import { Icon, Sheet, shrinkPhoto, StoredImage, useAction } from "./ui";
 import type { Goal, Pin, Who } from "./types";
@@ -30,6 +31,7 @@ export default function Board() {
       <header className="page-head">
         <p className="kicker">The Board</p>
         <h1>Castles &amp; Someday</h1>
+        <BoardTabs on="castles" />
         <p className="muted">Everything you're dreaming about. Pin anything; make the best ones goals and earn crowns towards them.</p>
       </header>
 

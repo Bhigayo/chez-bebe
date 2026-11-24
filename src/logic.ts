@@ -1,7 +1,7 @@
 // The rules of Chez Bébé: crowns, streaks, the court record, quiet days and the timeline.
 // Worked out from what's stored, so nothing can drift out of step.
 
-import type { Case, Checkin, Duel, Envelope, Goal, Greeting, Here, KeyDate, Member, Occasion, Tables, VaultKey, VaultUnlock, Who } from "./types";
+import type { PassportMatch, PassportProgress, PassportReady, Swipe, Case, Checkin, Duel, Envelope, Goal, Greeting, Here, KeyDate, Member, Occasion, Tables, VaultKey, VaultUnlock, Who } from "./types";
 
 /** "Today" is the same for both of you: the UK date. */
 export const dayKey = (d: Date | string = new Date()) =>
@@ -196,3 +196,46 @@ export const letterReady = (e: Pick<Envelope, "seal" | "open_on">, unlocks: Vaul
 /** Who has turned their key for an occasion, in the last 24 hours. */
 export const keysTurned = (keys: VaultKey[], occasion: Occasion, now = new Date()) =>
   keys.filter((k) => k.occasion === occasion && now.getTime() - Date.parse(k.turned_at) < 24 * 3600_000).map((k) => k.user_id);
+
+/* ---------------- Passport ---------------- */
+/** Every country you both want: yes from both, or a Super Like from either. Only once both have swiped. */
+export function passportMatches(swipes: Swipe[], members: Member[]): PassportMatch[] {
+  const him = memberWho(members, "him")?.user_id;
+  const her = memberWho(members, "her")?.user_id;
+  const hers = new Map(swipes.filter((s) => s.by === her).map((s) => [s.country, s]));
+  const out: PassportMatch[] = [];
+  for (const a of swipes) {
+    if (a.by !== him) continue;
+    const b = hers.get(a.country);
+    if (!b) continue;
+    if (!(a.choice === "super" || b.choice === "super" || (a.choice === "yes" && b.choice === "yes"))) continue;
+    const super_by = a.choice === "super" && b.choice === "super" ? "both" : a.choice === "super" ? "him" : b.choice === "super" ? "her" : null;
+    out.push({ country: a.country, matched_at: a.created_at > b.created_at ? a.created_at : b.created_at, super_by });
+  }
+  return out.sort((x, y) => x.matched_at.localeCompare(y.matched_at));
+}
+
+export const passportProgress = (swipes: Swipe[], ready: PassportReady[], members: Member[]): PassportProgress[] =>
+  members.map((m) => ({
+    who: m.who,
+    swiped: swipes.filter((s) => s.by === m.user_id).length,
+    sealed: ready.some((r) => r.user_id === m.user_id),
+    super_used: swipes.some((s) => s.by === m.user_id && s.choice === "super"),
+  }));
+
+/** The deck in your own order: shuffled the same way every time for you, differently for them. */
+export function deckFor<T>(userId: string, items: T[]): T[] {
+  let h = 2166136261;
+  for (const ch of userId) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  const rand = () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  };
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}

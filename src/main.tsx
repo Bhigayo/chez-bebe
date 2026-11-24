@@ -13,6 +13,7 @@ import { ChezProvider, useChez } from "./data";
 import { HouseGuide } from "./Guide";
 import Home from "./Home";
 import { Keys, SignIn } from "./Keys";
+import Passport from "./Passport";
 import Play from "./Play";
 import { demoReset, demoSwitch, store } from "./store";
 import { Icon, Sheet, useAction } from "./ui";
@@ -20,7 +21,7 @@ import type { Member } from "./types";
 import Us from "./Us";
 
 // #/                home          #/court, #/court/decrees
-// #/play            daily duel    #/board
+// #/play            daily duel    #/board, #/board/passport
 // #/us, #/us/timeline             #/keys  (her first visit)
 // The Vault is a separate app: vault.html
 const route = () => location.hash.replace(/^#\/?/, "").split("/");
@@ -93,7 +94,7 @@ function Shell({ r, onSignOut }: { r: string[]; onSignOut: () => void }) {
         ) : page === "play" ? (
           <Play />
         ) : page === "board" ? (
-          <Board />
+          r[1] === "passport" ? <Passport /> : <Board />
         ) : page === "guide" ? (
           <HouseGuide first={r[1] === "first"} />
         ) : page === "us" ? (

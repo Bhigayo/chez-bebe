@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { keysTurned, letterReady, caseWinner, courtRecord, crowns, dayKey, duelResults, goalProgress, greetingStreak, isQuiet, recentHere, together, upcoming } from "./logic";
+import { deckFor, passportMatches, passportProgress, keysTurned, letterReady, caseWinner, courtRecord, crowns, dayKey, duelResults, goalProgress, greetingStreak, isQuiet, recentHere, together, upcoming } from "./logic";
 import { countSolutions, puzzleFor } from "./sudoku";
 import { emptyTables, type Case, type Checkin, type Duel, type Goal, type Greeting, type KeyDate, type Member } from "./types";
 
@@ -133,5 +133,26 @@ describe("vault", () => {
     ];
     expect(keysTurned(keys, "wedding", now)).toEqual([HIM]);
     expect(keysTurned(keys, "meeting", now)).toEqual([]);
+  });
+});
+
+describe("passport", () => {
+  const sw = (by: string, country: string, choice: "yes" | "no" | "super", t = "2026-12-01T10:00:00Z") => ({ by, country, choice, created_at: t });
+  it("stamps only what you both want, or what a Super Like carries", () => {
+    const swipes = [sw(HIM, "JP", "yes"), sw(HER, "JP", "yes", "2026-12-02T10:00:00Z"), sw(HIM, "IS", "yes"), sw(HER, "IS", "no"), sw(HIM, "PF", "no"), sw(HER, "PF", "super"), sw(HIM, "FR", "yes")];
+    expect(passportMatches(swipes, members)).toEqual([
+      { country: "PF", matched_at: "2026-12-01T10:00:00Z", super_by: "her" },
+      { country: "JP", matched_at: "2026-12-02T10:00:00Z", super_by: null },
+    ]);
+    expect(passportProgress(swipes, [{ user_id: HER, at: "x" }], members)).toEqual([
+      { who: "him", swiped: 4, sealed: false, super_used: false },
+      { who: "her", swiped: 3, sealed: true, super_used: true },
+    ]);
+  });
+  it("shuffles the deck the same way each time, differently for each of you", () => {
+    const codes = Array.from({ length: 50 }, (_, i) => `C${i}`);
+    expect(deckFor(HIM, codes)).toEqual(deckFor(HIM, codes));
+    expect(deckFor(HIM, codes)).not.toEqual(deckFor(HER, codes));
+    expect([...deckFor(HER, codes)].sort()).toEqual([...codes].sort());
   });
 });

@@ -84,6 +84,7 @@ export function HouseGuide({ first }: { first?: boolean }) {
     ["court", "The Court"],
     ["duel", "The Duel"],
     ["board", "The Board"],
+    ["passport", "Passport"],
     ["crowns", "Crowns"],
     ["us", "Lore & Timeline"],
     ["settings", "Settings"],
@@ -197,6 +198,23 @@ export function HouseGuide({ first }: { first?: boolean }) {
           </li>
         </ol>
         <p className="muted small">New pins from the other one show on Home as new properties.</p>
+      </Section>
+
+      <Section id="passport" icon="star" title="Passport">
+        <p>Every country in the world, one card at a time. Where would you go together?</p>
+        <ol className="steps">
+          <li>
+            <b>Board → Passport.</b> Swipe right for yes, left for no.
+          </li>
+          <li>
+            You get <b>one Super Like</b> (swipe up). It gets a country stamped even if {them} says no, so choose carefully.
+          </li>
+          <li>Your swipes are private. {them} never sees them, only the stamps: the countries you <i>both</i> want.</li>
+          <li>
+            When you've seen them all, <b>seal your passport</b>. Once you've both sealed yours, one stamp is drawn at random: <b>the first trip</b>. No rerolls.
+          </li>
+        </ol>
+        <p className="muted small">Changed your mind? Take back your last swipe with the arrow, unless it's already been stamped. A stamp is a stamp.</p>
       </Section>
 
       <Section id="crowns" icon="crown" title="Crowns">

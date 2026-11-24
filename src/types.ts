@@ -83,6 +83,14 @@ export type Occasion = "meeting" | "wedding";
 export type VaultKey = { user_id: string; occasion: Occasion; turned_at: string };
 export type VaultUnlock = { occasion: Occasion; unlocked_at: string };
 
+/* Passport. You only ever load your own swipes; the matches and counts come from the server. */
+export type Choice = "yes" | "no" | "super";
+export type Swipe = { by: string; country: string; choice: Choice; created_at: string };
+export type PassportMatch = { country: string; matched_at: string; super_by: Who | "both" | null };
+export type PassportProgress = { who: Who; swiped: number; sealed: boolean; super_used: boolean };
+export type PassportReady = { user_id: string; at: string };
+export type PassportTrip = { country: string; drawn_at: string };
+
 export type Tables = {
   checkins: Checkin[];
   greetings: Greeting[];
@@ -99,9 +107,14 @@ export type Tables = {
   vault_letters: Envelope[];
   vault_keys: VaultKey[];
   vault_unlocks: VaultUnlock[];
+  passport_swipes: Swipe[];
+  passport_ready: PassportReady[];
+  passport_trip: PassportTrip[];
+  passport_matches: PassportMatch[];
+  passport_progress: PassportProgress[];
 };
 export type TableName = keyof Tables;
-export const TABLES: TableName[] = ["checkins", "greetings", "cases", "decrees", "pins", "goals", "duels", "lore", "dates", "here", "saved_notes", "settings", "vault_letters", "vault_keys", "vault_unlocks"];
+export const TABLES: TableName[] = ["checkins", "greetings", "cases", "decrees", "pins", "goals", "duels", "lore", "dates", "here", "saved_notes", "settings", "vault_letters", "vault_keys", "vault_unlocks", "passport_swipes", "passport_ready", "passport_trip"];
 
 export const emptyTables = (): Tables => ({
   checkins: [],
@@ -119,4 +132,9 @@ export const emptyTables = (): Tables => ({
   vault_letters: [],
   vault_keys: [],
   vault_unlocks: [],
+  passport_swipes: [],
+  passport_ready: [],
+  passport_trip: [],
+  passport_matches: [],
+  passport_progress: [],
 });

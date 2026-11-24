@@ -194,4 +194,67 @@ describe("chez bébé database", () => {
       await expect(as(HIM, "insert into vault_letters (title, seal, paper) values ('x', 'now', 'glitter')")).rejects.toThrow(/check constraint/);
     });
   });
+  describe("passport", () => {
+    const swipe = (user: string, country: string, choice: string) => as(user, "insert into passport_swipes (country, choice) values ($1, $2)", [country, choice]);
+    const matches = (user: string) => as<{ country: string; super_by: string | null }>(user, "select country, super_by from passport_matches()");
+
+    it("keeps each of you's swipes private, and only stamps what you both want", async () => {
+      await swipe(HIM, "JP", "yes");
+      await swipe(HIM, "IS", "yes");
+      await swipe(HIM, "FR", "no");
+      await swipe(HER, "JP", "yes");
+      await swipe(HER, "IS", "no");
+      // She can't see a single one of his swipes, only her own
+      expect(await as(HER, "select country from passport_swipes order by country")).toEqual([{ country: "IS" }, { country: "JP" }]);
+      expect(await as(STRANGER, "select * from passport_swipes")).toHaveLength(0);
+      await expect(as(HER, "insert into passport_swipes (by, country, choice) values ($1, 'NG', 'no')", [HIM])).rejects.toThrow(/permission denied/);
+      expect(await matches(HER)).toEqual([{ country: "JP", super_by: null }]);
+      expect(await matches(STRANGER)).toEqual([]);
+      // France isn't a match until she's swiped too
+      await swipe(HER, "FR", "yes");
+      expect((await matches(HIM)).map((m) => m.country)).toEqual(["JP"]);
+      const progress = await as<{ who: string; swiped: number; sealed: boolean }>(HIM, "select who, swiped, sealed from passport_progress() order by who");
+      expect(progress).toEqual([{ who: "her", swiped: 3, sealed: false }, { who: "him", swiped: 3, sealed: false }]);
+    });
+
+    it("lets one Super Like each overrule a no", async () => {
+      await swipe(HER, "PF", "super");
+      await expect(swipe(HER, "MV", "super")).rejects.toThrow(/duplicate key/);
+      await swipe(HIM, "PF", "no");
+      expect(await matches(HIM)).toEqual([{ country: "PF", super_by: "her" }]);
+      await expect(swipe(HIM, "PF", "yes")).rejects.toThrow(/duplicate key/);
+    });
+
+    it("lets you take a swipe back, but not a stamp", async () => {
+      await swipe(HIM, "IT", "no");
+      await as(HIM, "delete from passport_swipes where country = 'IT'");
+      await swipe(HIM, "IT", "yes");
+      await swipe(HER, "IT", "yes");
+      await as(HIM, "delete from passport_swipes where country = 'IT'");
+      expect((await matches(HER)).map((m) => m.country)).toEqual(["IT"]);
+      // and nobody can take back the other's
+      await swipe(HER, "GH", "no");
+      await as(HIM, "delete from passport_swipes where country = 'GH'");
+      expect(await as(HER, "select country from passport_swipes where country = 'GH'")).toHaveLength(1);
+    });
+
+    it("draws the first trip from your matches once you've both sealed your passports", async () => {
+      for (const c of ["JP", "IT", "GH"]) {
+        await swipe(HIM, c, "yes");
+        await swipe(HER, c, c === "GH" ? "no" : "yes");
+      }
+      expect((await as<{ t: string | null }>(HIM, "select passport_seal() as t"))[0].t).toBeNull();
+      // Sealed: no more swiping or taking back
+      await expect(swipe(HIM, "NG", "yes")).rejects.toThrow(/row-level security/);
+      await as(HIM, "delete from passport_swipes where country = 'GH'");
+      expect(await as(HIM, "select * from passport_swipes")).toHaveLength(3);
+      const [{ t }] = await as<{ t: string }>(HER, "select passport_seal() as t");
+      expect(["JP", "IT"]).toContain(t);
+      // Drawn once, for good
+      expect((await as<{ t: string }>(HIM, "select passport_seal() as t"))[0].t).toBe(t);
+      expect(await as(HIM, "select country from passport_trip")).toEqual([{ country: t }]);
+      await expect(as(HER, "update passport_trip set country = 'PF'")).rejects.toThrow(/permission denied/);
+      await expect(as(STRANGER, "select passport_seal()")).rejects.toThrow(/NOT_MEMBER/);
+    });
+  });
 });

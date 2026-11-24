@@ -2,8 +2,9 @@
 // browser where you can switch between being him and her, to try both sides.
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { letterReady } from "./logic";
-import { emptyTables, TABLES, type Envelope, type Letter, type LetterContent, type Member, type Occasion, type TableName, type Tables } from "./types";
+import { letterReady, passportMatches, passportProgress } from "./logic";
+import { COUNTRIES } from "./countries";
+import { emptyTables, TABLES, type Choice, type Envelope, type Letter, type LetterContent, type Member, type Occasion, type TableName, type Tables } from "./types";
 
 export interface Store {
   demo: boolean;
@@ -35,10 +36,16 @@ export interface Store {
   turnKey(o: Occasion): Promise<boolean>;
   /** Tears off one "take what you need" tab; returns all the torn ones */
   tearTab(id: string, index: number): Promise<number[]>;
+  /* Passport */
+  swipe(country: string, choice: Choice): Promise<void>;
+  /** Take a swipe back (not once it's made a match, or once your passport is sealed) */
+  unswipe(country: string): Promise<void>;
+  /** Seal your passport. Returns the first trip once you've both sealed yours. */
+  sealPassport(): Promise<string | null>;
 }
 
 const ENVELOPE = "id,created_at,by,title,seal,open_on,opened_at,envelope,envelope_photo";
-const NO_DATES: TableName[] = ["settings", "vault_keys", "vault_unlocks"];
+const NO_DATES: TableName[] = ["settings", "vault_keys", "vault_unlocks", "passport_ready", "passport_trip"];
 
 export class ChezError extends Error {}
 
@@ -51,6 +58,10 @@ export function friendly(e: unknown) {
   if (/ALREADY_RULED/.test(m)) return "The court has already ruled on this case.";
   if (/STILL_SEALED/.test(m)) return "Not yet. This one is still sealed.";
   if (/duplicate key.*duels|duels_day_by/.test(m)) return "You've already played today's puzzle.";
+  if (/passport_\w+.*(does not exist|schema cache)|(does not exist|schema cache).*passport_/.test(m)) return "Passport isn't set up yet: run db/migrations/004-passport.sql in Supabase.";
+  if (/passport_one_super/.test(m)) return "You've already used your Super Like.";
+  if (/duplicate key.*passport|passport_swipes_pkey/.test(m)) return "You've already swiped on that one.";
+  if (/row-level security.*passport_swipes/.test(m)) return "Your passport is sealed. No more swiping.";
   if (/Invalid login|invalid_credentials/i.test(m)) return "That key doesn't fit this door.";
   if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return "No connection. Try again in a moment.";
   if (/row-level security|JWT/.test(m)) return "You've been signed out. Sign in again.";
@@ -98,14 +109,24 @@ function supabaseStore(url: string, key: string): Store {
     },
     async load() {
       const t = emptyTables();
-      await Promise.all(
-        TABLES.map(async (name) => {
+      await Promise.all([
+        ...TABLES.map(async (name) => {
           // Only ever the envelopes from the Vault, never the letters
           const q = sb.from(name).select(name === "vault_letters" ? ENVELOPE : "*");
           const r = NO_DATES.includes(name) ? await q : await q.order("created_at", { ascending: true });
+          // Passport arrived later: until its SQL has been run, the rest of the house still works
+          if (r.error && name.startsWith("passport_")) return;
           (t as Record<string, unknown>)[name] = check(r) ?? [];
         }),
-      );
+        (async () => {
+          const r = await sb.rpc("passport_matches");
+          if (!r.error) t.passport_matches = (r.data as Tables["passport_matches"]) ?? [];
+        })(),
+        (async () => {
+          const r = await sb.rpc("passport_progress");
+          if (!r.error) t.passport_progress = (r.data as Tables["passport_progress"]) ?? [];
+        })(),
+      ]);
       return t;
     },
     async add(table, row) {
@@ -182,6 +203,16 @@ function supabaseStore(url: string, key: string): Store {
     },
     async tearTab(id, index) {
       return check(await sb.rpc("tear_tab", { p_id: id, p_index: index })) as number[];
+    },
+    async swipe(country, choice) {
+      check(await sb.from("passport_swipes").insert({ country, choice }));
+    },
+    async unswipe(country) {
+      const r = check(await sb.from("passport_swipes").delete().eq("country", country).select("country"));
+      if (!(r as unknown[])?.length) throw new ChezError("That one's stamped now. A stamp is a stamp.");
+    },
+    async sealPassport() {
+      return check(await sb.rpc("passport_seal")) as string | null;
     },
   };
 }
@@ -268,6 +299,13 @@ function demoSeed(): Tables {
       ruled_at: at(1, 21),
     },
   ];
+  // Her side of the Passport is already swiped, so his matches land as he goes
+  t.passport_swipes = COUNTRIES.map((c, i) => ({
+    by: DEMO_HER,
+    country: c.code,
+    choice: c.code === "FR" ? "super" : (i * 37) % 100 < 45 ? "yes" : "no",
+    created_at: at(1, 21),
+  }));
   return t;
 }
 
@@ -333,7 +371,12 @@ function demoStore(): Store {
     async signOut() {},
     async acceptKeys() {},
     async load() {
-      return load();
+      const t = load();
+      // Like the real thing: you only see your own swipes, and the matches
+      t.passport_matches = passportMatches(t.passport_swipes, demoMembers);
+      t.passport_progress = passportProgress(t.passport_swipes, t.passport_ready, demoMembers);
+      t.passport_swipes = t.passport_swipes.filter((x) => x.by === as());
+      return t;
     },
     async add(table, row) {
       const t = load();
@@ -430,6 +473,30 @@ function demoStore(): Store {
       saveWords(words);
       channel?.postMessage("changed");
       return w.torn;
+    },
+    async swipe(country, choice) {
+      const t = load();
+      if (t.passport_ready.some((r) => r.user_id === as())) throw new ChezError(friendly("row-level security passport_swipes"));
+      if (t.passport_swipes.some((x) => x.by === as() && x.country === country)) throw new ChezError(friendly("passport_swipes_pkey"));
+      if (choice === "super" && t.passport_swipes.some((x) => x.by === as() && x.choice === "super")) throw new ChezError(friendly("passport_one_super"));
+      t.passport_swipes.push({ by: as(), country, choice, created_at: new Date().toISOString() });
+      save(t);
+    },
+    async unswipe(country) {
+      const t = load();
+      if (t.passport_ready.some((r) => r.user_id === as())) throw new ChezError(friendly("row-level security passport_swipes"));
+      if (passportMatches(t.passport_swipes, demoMembers).some((m) => m.country === country)) throw new ChezError("That one's stamped now. A stamp is a stamp.");
+      t.passport_swipes = t.passport_swipes.filter((x) => !(x.by === as() && x.country === country));
+      save(t);
+    },
+    async sealPassport() {
+      const t = load();
+      if (!t.passport_ready.some((r) => r.user_id === as())) t.passport_ready.push({ user_id: as(), at: new Date().toISOString() });
+      const matches = passportMatches(t.passport_swipes, demoMembers);
+      if (t.passport_ready.length >= 2 && !t.passport_trip.length && matches.length)
+        t.passport_trip = [{ country: matches[Math.floor(Math.random() * matches.length)].country, drawn_at: new Date().toISOString() }];
+      save(t);
+      return t.passport_trip[0]?.country ?? null;
     },
     async turnKey(o) {
       const t = load();

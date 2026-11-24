@@ -2619,3 +2619,433 @@ body.vault-body {
 .vault-guide .btn {
   margin-top: 16px;
 }
+
+/* ---------- Passport: swipe on the world ---------- */
+.passport .page-head {
+  padding-bottom: 10px;
+}
+
+.pp-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--blush);
+  font-size: 13.5px;
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+  flex-wrap: wrap;
+}
+
+.pp-progress > span {
+  white-space: nowrap;
+}
+
+.pp-progress b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.pp-hint {
+  margin: 8px 4px 0;
+}
+
+.deck-wrap {
+  margin: 14px 0 8px;
+}
+
+.deck {
+  position: relative;
+  height: min(420px, 52svh);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.country-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  overflow: hidden;
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(60, 20, 20, 0.18);
+  transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.3, 1);
+  background: linear-gradient(160deg, var(--a), var(--b));
+}
+
+.country-card.top {
+  cursor: grab;
+}
+
+.country-card.dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+.region-europe {
+  --a: #8c3149;
+  --b: #3b1420;
+}
+.region-asia {
+  --a: #c0543a;
+  --b: #5a1d1a;
+}
+.region-africa {
+  --a: #c68a3d;
+  --b: #6b3a1c;
+}
+.region-americas {
+  --a: #2f7a78;
+  --b: #173a43;
+}
+.region-oceania {
+  --a: #3b78a8;
+  --b: #1b2e52;
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 26px 24px 28px;
+  background: radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.16), transparent 55%);
+}
+
+.card-flag {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: min(110px, 13svh);
+  line-height: 1;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.25));
+}
+
+.card-face h2 {
+  font: 400 40px/1.02 var(--serif);
+}
+
+.card-meta {
+  margin: 6px 0 0;
+  font-size: 14px;
+  opacity: 0.82;
+}
+
+.card-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-top: 12px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 13px;
+}
+
+.verdict {
+  position: absolute;
+  top: 26px;
+  z-index: 2;
+  padding: 4px 12px;
+  border: 3px solid currentColor;
+  border-radius: 10px;
+  font: 700 22px/1.2 var(--sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.verdict.show {
+  opacity: 1;
+}
+
+.verdict.yes {
+  left: 22px;
+  color: #b8f0c8;
+  rotate: -14deg;
+}
+
+.verdict.no {
+  right: 22px;
+  color: #ffc2c8;
+  rotate: 14deg;
+}
+
+.verdict.super {
+  left: 50%;
+  top: auto;
+  bottom: 140px;
+  translate: -50% 0;
+  color: #f4d28f;
+}
+
+.deck-btns {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.round {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 4px 12px rgba(60, 20, 20, 0.1);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.12s;
+}
+
+.round:active {
+  transform: scale(0.92);
+}
+
+.round:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.round.small {
+  width: 46px;
+  height: 46px;
+  color: var(--muted);
+}
+
+.round.no {
+  color: #a3283b;
+}
+
+.round.yes {
+  color: var(--wine);
+}
+
+.round.super {
+  width: 52px;
+  height: 52px;
+  color: var(--gold);
+}
+
+.deck-help {
+  text-align: center;
+  margin-top: 12px;
+}
+
+.pp-done {
+  text-align: center;
+  padding: 26px 20px;
+  margin-top: 16px;
+}
+
+.pp-done .btn {
+  margin-top: 12px;
+}
+
+.pp-seal-mark {
+  font-size: 44px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.stamps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 10px;
+  padding: 4px 0;
+}
+
+.stamp {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  aspect-ratio: 1;
+  padding: 8px 6px;
+  border: 2px dashed var(--wine);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--wine);
+  text-align: center;
+  align-content: center;
+  cursor: pointer;
+}
+
+.stamp-flag {
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.stamp b {
+  max-width: 100%;
+  font: 500 11.5px/1.1 var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+.stamp small {
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.stamp.super {
+  border: 2px solid var(--gold);
+  color: #7a5a2c;
+  box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 4px var(--gold);
+}
+
+.stamp.trip {
+  background: var(--blush);
+}
+
+.stamp-star {
+  position: absolute;
+  top: -4px;
+  right: 2px;
+  font-style: normal;
+  color: var(--gold);
+  font-size: 18px;
+}
+
+.stamp-big {
+  font-size: 84px;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.center {
+  text-align: center;
+}
+
+.match-back {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 20px;
+  background: rgba(42, 12, 20, 0.82);
+  animation: fade 0.25s ease-out;
+}
+
+.match {
+  width: min(380px, 100%);
+  margin: auto;
+  text-align: center;
+  color: #fff;
+}
+
+.match .kicker {
+  color: #d9b273;
+}
+
+.match h2 {
+  font: 400 42px/1.05 var(--serif);
+  margin: 6px 0 18px;
+}
+
+.match-stamp {
+  display: grid;
+  place-items: center;
+  width: 150px;
+  height: 150px;
+  margin: 0 auto 18px;
+  border: 3px dashed #d9b273;
+  border-radius: 50%;
+  font-size: 76px;
+  animation: stamp-in 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+.match p {
+  margin: 6px 0;
+}
+
+.match .small {
+  opacity: 0.8;
+}
+
+.match .btn {
+  margin-top: 22px;
+}
+
+.match-many {
+  overflow: hidden;
+}
+
+.match-many span {
+  font-size: 34px;
+  margin: 0 3px;
+  display: inline-block;
+  animation: stamp-in 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+@keyframes stamp-in {
+  from {
+    transform: scale(1.6) rotate(-18deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(-6deg);
+    opacity: 1;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.trip-card {
+  margin: 18px 0 8px;
+  padding: 28px 22px;
+  border-radius: 26px;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(160deg, #6e2236, #2a1b1a);
+  box-shadow: 0 12px 30px rgba(60, 20, 20, 0.2);
+  transition: transform 0.7s;
+}
+
+.trip-card .kicker {
+  color: #d9b273;
+}
+
+.trip-card h2 {
+  font: 400 40px/1.05 var(--serif);
+  margin: 6px 0;
+}
+
+.trip-card .muted {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.trip-card .btn {
+  margin-top: 16px;
+}
+
+.trip-card.flipping {
+  transform: rotateY(90deg);
+}
+
+.trip-card.open {
+  animation: fade 0.5s ease-out;
+}
+
+.trip-sealed,
+.trip-flag {
+  display: block;
+  font-size: 84px;
+  line-height: 1.15;
+  margin: 10px 0;
+}

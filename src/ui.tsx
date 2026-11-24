@@ -26,6 +26,8 @@ const paths: Record<string, ReactNode> = {
   ),
   us: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />,
   plus: <path d="M12 5v14M5 12h14" />,
+  star: <path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />,
+  undo: <path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3" />,
   mic: (
     <>
       <rect x="9" y="3" width="6" height="11" rx="3" />
